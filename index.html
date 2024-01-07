@@ -61,15 +61,15 @@
 
     table-container {
       max-width: 100%;
-      overflow-x: auto; /* Add horizontal scrollbar when needed */
+      overflow-x: auto;
       margin-top: 20px;
-      display: block;
+      display: none;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      white-space: nowrap; /* Prevent text wrapping in cells */
+      white-space: nowrap;
     }
 
     table th, table td {
@@ -128,89 +128,90 @@
   </table-container>
 
   <script>
-  function calculateLoan() {
-    var loanAmount = parseFloat(document.getElementById('loanAmount').value);
-    var installmentType = document.getElementById('installmentType').value;
-    var installments = parseInt(document.getElementById('installments').value);
-    var gracePeriod = parseInt(document.getElementById('gracePeriod').value) || 0;
-    var interestRate = parseFloat(document.getElementById('interestRate').value) / 100;
-    var loanDate = new Date(document.getElementById('loanDate').value);
+    function calculateLoan() {
+      var loanAmount = parseFloat(document.getElementById('loanAmount').value);
+      var installmentType = document.getElementById('installmentType').value;
+      var installments = parseInt(document.getElementById('installments').value);
+      var gracePeriod = parseInt(document.getElementById('gracePeriod').value) || 0;
+      var interestRate = parseFloat(document.getElementById('interestRate').value) / 100;
+      var loanDate = new Date(document.getElementById('loanDate').value);
 
-    var resultElement = document.getElementById('result');
-    var paymentScheduleTable = document.getElementById('paymentSchedule');
+      var resultElement = document.getElementById('result');
+      var paymentScheduleTable = document.getElementById('paymentSchedule');
+      var tableContainer = document.querySelector('table-container');
 
-    if (isNaN(loanAmount) || isNaN(installments) || isNaN(interestRate) || isNaN(loanDate.getTime())) {
-      // Show an error message if any of the inputs is not a valid number or date
-      paymentScheduleTable.style.display = 'none';
-      resultElement.innerHTML = 'Invalid input. Please enter valid numbers and a valid loan date.';
-      return;
-    }
+      if (isNaN(loanAmount) || isNaN(installments) || isNaN(interestRate) || isNaN(loanDate.getTime())) {
+        // Show an error message if any of the inputs is not a valid number or date
+        paymentScheduleTable.style.display = 'none';
+        resultElement.innerHTML = 'Invalid input. Please enter valid numbers and a valid loan date.';
+        return;
+      }
 
-    // Calculate total number of installments in months
-    var totalInstallments = (installmentType === 'years') ? installments * 12 : installments;
+      // Calculate total number of installments in months
+      var totalInstallments = (installmentType === 'years') ? installments * 12 : installments;
 
-    // Calculate monthly payment
-    var monthlyInterestRate = interestRate / 12;
-    var monthlyPayment = loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, totalInstallments)) / (Math.pow(1 + monthlyInterestRate, totalInstallments) - 1);
+      // Calculate monthly payment
+      var monthlyInterestRate = interestRate / 12;
+      var monthlyPayment = loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, totalInstallments)) / (Math.pow(1 + monthlyInterestRate, totalInstallments) - 1);
 
-    // Generate payment schedule
-    var remainingBalance = loanAmount;
-    var cumulativeInterest = 0;
-    var paymentSchedule = [];
+      // Generate payment schedule
+      var remainingBalance = loanAmount;
+      var cumulativeInterest = 0;
+      var paymentSchedule = [];
 
-    for (var i = 0; i < totalInstallments; i++) {
-      var interestPayment = remainingBalance * monthlyInterestRate;
-      var principalPayment = monthlyPayment - interestPayment;
+      for (var i = 0; i < totalInstallments; i++) {
+        var interestPayment = remainingBalance * monthlyInterestRate;
+        var principalPayment = monthlyPayment - interestPayment;
 
-      var dueDate = new Date(loanDate);
-      dueDate.setMonth(loanDate.getMonth() + i + gracePeriod + 1);
-      dueDate.setDate(0); // Set day to the last day of the month
+        var dueDate = new Date(loanDate);
+        dueDate.setMonth(loanDate.getMonth() + i + gracePeriod + 1);
+        dueDate.setDate(0); // Set day to the last day of the month
 
-      cumulativeInterest += interestPayment;
+        cumulativeInterest += interestPayment;
 
-      paymentSchedule.push({
-        installment: i + 1,
-        dueDate: dueDate.toLocaleDateString('en-US', { day: 'numeric', month: 'numeric', year: 'numeric' }),
-        balance: remainingBalance.toFixed(2),
-        principal: principalPayment.toFixed(2),
-        installmentAmount: monthlyPayment.toFixed(2),
-        interest: interestPayment.toFixed(2),
-        cumulativeInterest: cumulativeInterest.toFixed(2)
+        paymentSchedule.push({
+          installment: i + 1,
+          dueDate: dueDate.toLocaleDateString('en-US', { day: 'numeric', month: 'numeric', year: 'numeric' }),
+          balance: remainingBalance.toFixed(2),
+          principal: principalPayment.toFixed(2),
+          installmentAmount: monthlyPayment.toFixed(2),
+          interest: interestPayment.toFixed(2),
+          cumulativeInterest: cumulativeInterest.toFixed(2)
+        });
+
+        remainingBalance -= principalPayment;
+      }
+
+      // Display results
+      resultElement.innerHTML = 'Loan Summary<br>';
+      resultElement.innerHTML += 'Loan Amount: $' + loanAmount.toFixed(2) + ' @ ' + interestRate + '%<br>';
+      resultElement.innerHTML += 'Loan Date: ' + loanDate.toLocaleDateString('en-US', { day: 'numeric', month: 'numeric', year: 'numeric' }) + '<br>';
+      resultElement.innerHTML += 'No. of Installments: ' + totalInstallments + '<br>';
+      resultElement.innerHTML += 'Installment Amount: $' + monthlyPayment.toFixed(2) + '<br>';
+      resultElement.innerHTML += 'First Installment Date: ' + paymentSchedule[0].dueDate + '<br>';
+      resultElement.innerHTML += 'Last Installment Date: ' + paymentSchedule[totalInstallments - 1].dueDate + '<br>';
+      resultElement.innerHTML += 'Last Installment Amount: $' + paymentSchedule[totalInstallments - 1].installmentAmount + '<br>';
+      resultElement.innerHTML += 'Total Interest: $' + cumulativeInterest.toFixed(2) + '<br>';
+      resultElement.innerHTML += 'Total Loan Amount: $' + (loanAmount + cumulativeInterest).toFixed(2);
+
+      // Display payment schedule table
+      paymentScheduleTable.style.display = 'table';
+      var paymentScheduleTableBody = paymentScheduleTable.getElementsByTagName('tbody')[0];
+      paymentScheduleTableBody.innerHTML = '';
+
+      paymentSchedule.forEach(function (payment) {
+        var row = paymentScheduleTableBody.insertRow();
+        var cells = Object.values(payment);
+
+        cells.forEach(function (cell, index) {
+          var tableCell = row.insertCell(index);
+          tableCell.textContent = cell;
+        });
       });
 
-      remainingBalance -= principalPayment;
+      // Show the table container
+      tableContainer.style.display = 'block';
     }
-
-    // Display results
-    resultElement.innerHTML = 'Loan Summary<br>';
-    resultElement.innerHTML += 'Loan Amount: $' + loanAmount.toFixed(2) + ' @ ' + interestRate + '%<br>';
-    resultElement.innerHTML += 'Loan Date: ' + loanDate.toLocaleDateString('en-US', { day: 'numeric', month: 'numeric', year: 'numeric' }) + '<br>';
-    resultElement.innerHTML += 'No. of Installments: ' + totalInstallments + '<br>';
-    resultElement.innerHTML += 'Installment Amount: $' + monthlyPayment.toFixed(2) + '<br>';
-    resultElement.innerHTML += 'First Installment Date: ' + paymentSchedule[0].dueDate + '<br>';
-    resultElement.innerHTML += 'Last Installment Date: ' + paymentSchedule[totalInstallments - 1].dueDate + '<br>';
-    resultElement.innerHTML += 'Last Installment Amount: $' + paymentSchedule[totalInstallments - 1].installmentAmount + '<br>';
-    resultElement.innerHTML += 'Total Interest: $' + cumulativeInterest.toFixed(2) + '<br>';
-    resultElement.innerHTML += 'Total Loan Amount: $' + (loanAmount + cumulativeInterest).toFixed(2);
-
-    // Display payment schedule table
-    paymentScheduleTable.style.display = 'table';
-    var paymentScheduleTableBody = paymentScheduleTable.getElementsByTagName('tbody')[0];
-    paymentScheduleTableBody.innerHTML = '';
-
-    paymentSchedule.forEach(function (payment) {
-      var row = paymentScheduleTableBody.insertRow();
-      var cells = Object.values(payment);
-
-      cells.forEach(function (cell, index) {
-        var tableCell = row.insertCell(index);
-        tableCell.textContent = cell;
-      });
-    });
-  }
-</script>
-
-  
-
+  </script>
 </body>
 </html>
